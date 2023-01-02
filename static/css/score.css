@@ -1,0 +1,30 @@
+body, div {
+    margin: 0px; padding: 0px;
+    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: hidden;
+}
+
+/* FIXME - update for new divs
+#musicwrap {
+    transition-property: top, left, height, width;
+    transition-timing-function: ease;
+    transition-duration: 350ms;
+}
+#music {
+    position: absolute;
+    z-index: 1;
+}
+#underlight {
+    position: absolute;
+    z-index: -1;
+    background-color: #ddeecc;
+    top: 0px;
+    left: 0px;
+    width: 100px;
+    height: 100px;
+    transition-property: top, left, height, width, opacity;
+    transition-timing-function: ease;
+    transition-duration: 200ms;
+}
+*/

@@ -11,5 +11,14 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
+# Built binary
+cmd/server/obsmusicserver
+
+# Generated bundle
+static/js/bundle.js
+static/js/bundle.js.map
+
+node_modules/
+
 # Dependency directories (remove the comment below to include it)
 # vendor/

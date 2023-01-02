@@ -1,0 +1,18 @@
+{
+  "baseWidth": 41.65539,
+  "baseHeight": 8.230479,
+  "defaultHeight": 300,
+  "measures": [
+    0.18,
+    0.43778715,
+    0.7030566,
+    0.9777064
+  ],
+  "staves": [
+    {
+      "name": "staff-1",
+      "top": 0.27157962,
+      "bottom": 0.75757813
+    }
+  ]
+}

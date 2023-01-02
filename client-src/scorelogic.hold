@@ -1,0 +1,284 @@
+function changeScale(newState, action) {
+    const startingHeight = newState.runtime.baseHeight
+    const startingScale = newState.runtime.px.scale
+    const startingAnchor = newState.runtime.viewport.anchor
+    newState.runtime.baseHeight = startingHeight + (action.units * HEIGHT_INCR)
+    newState.runtime.px = calcPixels(newState.scoreData, newState.runtime.baseHeight)
+    newState.runtime.selection = calcSelectionBounds(
+        newState.runtime.px, 
+        newState.runtime.selection.start, 
+        newState.runtime.selection.end,
+        )
+    setOffset(newState) // calculates viewport
+    // recalculate the anchor, scaled
+    // startingScale / endingScale = startingAnchor / X
+    // endingScale * startingAnchor / startingScale = X (newAnchor)
+    // const newScale = newState.runtime.px.scale
+    // const newAnchor = (newScale * startingAnchor) / startingScale
+    // newState.runtime.viewport.anchor = newAnchor
+    
+    return newState
+}
+
+function moveSelection(newState, action) {
+    const u = action.units
+    let newStart = newState.runtime.selection.start + u
+    let newEnd = newState.runtime.selection.end + u
+    if (newStart < 0) {
+        newStart = 0
+    }
+    if (newStart > newState.runtime.px.measures.length-2) {
+        newStart = newState.runtime.px.measures.length-2
+    }
+    if (newEnd < 1) {
+        newEnd = 1
+    }
+    if (newEnd > newState.runtime.px.measures.length-1) {
+        newEnd = newState.runtime.px.measures.length-1
+    }
+
+    newState.runtime.selection = calcSelectionBounds(
+        newState.runtime.px, 
+        newStart, 
+        newEnd,
+        )
+    newState.runtime.viewport = calcViewport(newState.runtime)
+    return newState
+}
+
+function extendSelection(newState, action) {
+    const u = action.units
+    const start = newState.runtime.selection.start
+    let newEnd = newState.runtime.selection.end + u
+    if ((newEnd - start) < 1) {
+        newEnd = start + 1
+    }
+    newState.runtime.selection = calcSelectionBounds(
+        newState.runtime.px, 
+        start, 
+        newEnd,
+        )
+    newState.runtime.viewport = calcViewport(newState.runtime)
+    return newState
+}
+
+function moveToStart(newState) {
+    newState.runtime.viewport.anchor = 0
+    const selectionSize = newState.runtime.selection.end - newState.runtime.selection.start
+    newState.runtime.selection = calcSelectionBounds(
+        newState.runtime.px, 
+        0, 
+        selectionSize,
+        )
+    newState.runtime.viewport = calcViewport(newState.runtime)
+    return newState
+}
+
+function moveToEnd(newState) {
+    const selectionSize = newState.runtime.selection.end - newState.runtime.selection.start
+    const end = newState.runtime.px.measures.length-1
+    newState.runtime.viewport.anchor = end
+    newState.runtime.selection = calcSelectionBounds(
+        newState.runtime.px, 
+        end-selectionSize, 
+        end,
+        )
+    newState.runtime.viewport = calcViewport(newState.runtime)
+    return newState
+}
+
+function setOffset(newState) {
+    // FIXME - just store the offset (negative) versus 'anchor'
+    const newAnchor = newState.runtime.selection.bounds.left - PADDING_LEFT
+    newState.runtime.viewport.anchor = newAnchor
+    newState.runtime.viewport = calcViewport(newState.runtime)
+    return newState
+}
+
+function getMeasurements(baseHeight) {
+    return {
+        baseHeight,
+        screenWidth: window.innerWidth,
+        paddingLeft: PADDING_LEFT,
+        paddingTop: PADDING_TOP,
+    }
+}
+
+function calcViewport(runtime) {
+    const measures = getMeasurements()
+    const newViewport = {
+        anchor: runtime.viewport.anchor,
+        bounds: {
+            top: 0,
+            left: 0,
+            width: measures.screenWidth,
+            height: measures.baseHeight,
+        }
+    }
+    
+    const screenWidth = measures.screenWidth
+    const currentOffset = -1 * runtime.viewport.anchor
+    const selectionLeft = runtime.selection.bounds.left + measures.paddingLeft
+    const selectionRight = selectionLeft + runtime.selection.bounds.width 
+
+    const newOffset = getScoreOffset(
+        currentOffset,
+        selectionLeft,
+        selectionRight,
+        runtime.px.measures,
+        screenWidth,
+        measures.paddingLeft,
+    )
+    
+    newViewport.bounds = {
+        top: runtime.viewport.bounds.top,
+        left: -1 * newOffset,
+        height: runtime.viewport.bounds.height,
+        width: (-1 * newOffset) + screenWidth,
+    }
+    newViewport.anchor = (-1 * newOffset)
+
+    return newViewport
+}
+
+// Return a { left, top, width, height } struct whose values
+// are the bounds of the current selection in pixels
+function calcSelectionBounds(px, start, end) {
+    const selection = {
+        mode: 'measure',
+        start: start,
+        end: end,
+        bounds: {
+            left: 0,
+            top: 0,
+            width: 0,
+            height: 0,
+        }
+    }
+
+    const selectionWidth = px.measures[end] - px.measures[start]
+    const selectionHeight = px.staves[px.staves.length-1].bottom - px.staves[0].top
+    selection.bounds = {
+        left: px.measures[start],
+        top: px.staves[0].top,
+        width: selectionWidth,
+        height: selectionHeight,
+    }
+
+    return selection
+}
+
+
+
+// The score data contains float values for measurements
+// such as measure and staff positions and width/height.
+// When setting the zoom level or "scale" we precalculate
+// all of these measurements into pixels so as to avoid
+// computing dynamically and repeatedly.
+function calcPixels(data, desiredHeight) {
+
+    const newPx = {
+        scale: 0,
+        width: 0,
+        height: 0,
+        measures: [],
+        staves: [],
+    }
+
+    newPx.scale = desiredHeight / data.baseHeight
+    newPx.width = Math.floor(data.baseWidth * newPx.scale),
+    newPx.height = Math.floor(data.baseHeight * newPx.scale),
+    data.measures.forEach((m, i) => {
+        newPx.measures[i] = Math.floor(newPx.width * data.measures[i])
+    });
+    data.staves.forEach((s, i) => {
+        newPx.staves[i] = {
+            name: data.staves[i].name,
+            top: Math.floor(newPx.height * data.staves[i].top),
+            bottom: Math.floor(newPx.height * data.staves[i].bottom),
+        }
+    });
+    return newPx
+}
+
+
+
+
+
+// When scrolling through a score, we must shift the music left and right to
+// keep the current selection on the screen.
+// This function returns a negative integer indicating the correct X-Offset
+// to keep the current selection on the screen.
+//
+// It generally attempts to shift by "pages" rather than measure:
+//   Assuming a single measure selection, scrolling past the right edge of 
+//     the screen will move the next selected measure to the left side of the
+//     the screen (usually 4-5 measures shift)
+//   Scrolling off the left side of the screen, places the selection at the
+//     right side of the screen (again, usually 4-5 measures of shift)
+//
+// Consider a score as a very large graphic composed of measures which fall
+// at certain pixel locations from 0 (extreme left) to N, where N is the 
+// full width of the image. Typically this is large: 15,000 or more.
+// 
+// As a simple example, assume a score that is 10,000 pixels wide, and that the
+// measures are each 1,000 pixels wide. The screen is 2,000 pixels wide.
+// 
+// Offset is initially 0, and selectionLeft=0, selectionRight=1,000 (one measure)
+// The screen is 2000 pixels wide, and our 0-1000 selection fits.
+// Moving the selection right one measure moves it to 1000-2000. It still fits
+// Moving to the right again takes us off the screen. We should shift one _page_
+// to the right, shifting from measures 1-2 onscreen to measures 3-4 onscreen.
+// The desired offset should be -2000.
+//
+// If we then move the selection _backwards_ from 2000-3000 back to 1000-2000
+// we're off the left side of the screen. We want to shift an entire page again
+// moving the selected 1000-2000 measure to the _right_ side of the screen.
+// The desired offfset should be 0.
+//
+// In reality, the measures are all different widths, and we must account for
+// some padding on the left side of the screen. Most of thee time, more like
+// 4-5 measures will be a "page". However, we must account for cases where 
+// the zoom is increased, or the selection is large and doesn't fit on the screen.
+
+function getScoreOffset(
+    currentOffset,
+    selectionLeft, 
+    selectionRight, 
+    measureBoundaries, 
+    screenWidth, 
+    leftPadding) {
+
+    const screenLeft = currentOffset * -1
+    const screenRight = screenLeft + screenWidth
+
+    if (selectionLeft >= screenLeft && selectionRight <= screenRight) {
+        // Already on screen
+        return currentOffset
+    }
+
+    // Off the right side of the sscreen
+    if (selectionRight >= screenRight) {
+        for (let i=measureBoundaries.length-1; i>=0; i--) {
+            const b = measureBoundaries[i]
+            // Find new screenLeft where selectionLeft is just past it
+            const tempScreenLeft = b
+            if (selectionLeft >= tempScreenLeft) {
+                return (b-leftPadding) * -1
+            }
+        }
+    }
+
+    // Off the left side of the screen
+    if (selectionLeft <= screenLeft) {
+        for (const b of measureBoundaries) {
+            const tempScreenRight = b + screenWidth
+            if (selectionRight <= tempScreenRight) {
+                return (b-leftPadding) * -1
+            }
+        }
+    }
+
+    return 0
+}
+

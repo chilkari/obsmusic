@@ -1,0 +1,246 @@
+import React, { useReducer, useEffect, useRef } from 'react';
+import { keyframes } from 'styled-components';
+const scorelogic = require('./scorelogic')
+
+// The Music component renders the music itself, scaled (zoomed) and offset as needed
+function Music(props) {
+    if (props.state.scoreData === null) {
+        return <p>Loading...</p>
+    } else {
+        // Viewport style
+        const vb = props.state.runtime.viewport.bounds
+        const vs = {
+            position: 'absolute',
+            top: vb.top + 'px',
+            left: -1 * vb.left + 'px',
+            width: vb.width + 'px',
+            height: vb.height + 'px',
+        }
+        const s = {
+            top: 0 + 'px',
+            left: 0 + 'px',
+            width: props.state.runtime.px.width + 'px',
+            height: props.state.runtime.px.height + 'px',
+        }
+        return (
+            <div id="musicwrap" style={vs}>
+                <img id="music" style={s} src={props.state.image} />
+                <Underlight
+                    state={props.state}
+                />
+            </div>
+        )
+    }
+}
+
+// Underlight is the highlight. It is "below" the music (which is transparent)
+function Underlight(props) {
+    if (!props.state.scoreData) {
+        return <p></p>
+    } else {
+        b = props.state.runtime.selection.bounds
+        const opacity = (props.state.runtime.underlightVisible) ? 1.0 : 0.0
+        const s = {
+            top: b.top + 'px',
+            left: b.left + 'px',
+            width: b.width + 'px',
+            height: b.height + 'px',
+            opacity: opacity,
+        }
+        return <div id="underlight" style={s}></div>
+    }
+}
+
+function reducer(state, action) {
+    const newState = JSON.parse(JSON.stringify(state))
+    switch (action.type) {
+        case 'prepLoadedMusic':
+            return scorelogic.prepLoadedMusic(newState, action)
+        case 'moveSelection':
+            return scorelogic.moveSelection(newState, action)
+        case 'extendSelection':
+            return scorelogic.extendSelection(newState, action)
+        case 'moveToStart':
+            return scorelogic.moveToStart(newState)
+        case 'moveToEnd':
+            return scorelogic.moveToEnd(newState)
+        case 'setOffset':
+            return scorelogic.setOffset(newState)
+        case 'toggleUnderlight':
+            newState.runtime.underlightVisible = !newState.runtime.underlightVisible
+            return newState
+        case 'changeScale':
+            // FIXME - debounce
+            return scorelogic.changeScale(newState, action)
+        default:
+            throw new Error();
+  }
+}
+
+const initialState = {
+    image: null,
+    // leave scoreData unmodified from original JSON source via fetch
+    scoreData: null,
+    // This is where working updated params belong
+    runtime: {
+        // This is actually what is used to determine scale. "desired height full image"
+        baseHeight: 550, // Just a default. Will be overriden
+        underlightVisible: false,
+
+        // Struct representing current selection
+        selection: {
+            mode: 'measure', // FIXME - ditch for X/Y
+            start: 0, // FIXME - move into bounds: left
+            end: 1, // FIMXE - move into bounds: right
+
+            modeX: 'measure', // ['measure', 'beat']
+            modeY: 'full', // ['full', 'staff']
+            bounds: { // pixel values
+                left: 0,
+                top: 0,
+                width: 0,
+                height: 0,
+            }
+        },
+        
+        // A struct showing how the music is shown within the window
+        viewport: {
+            anchor: 0, // FIXME - ditch this in favor of below
+            bounds: { // FIXME - ditch this in favor of below
+                top: 0,
+                left: 0,
+                width: 1920,
+                height: 550,
+            },
+
+            paddingLeft: 85, // Space between left edge and first measure shown
+            paddingTop: 85, // Space between top edge and first staff shown
+            offsetX: 0, // a negative number to shift music left
+            offsetY: 0, // a negative number to shift music up
+            width: 0, // window width for scrolling
+            height: 0, // window height for scrolling
+        },
+        
+        // Precomputed pixel values for the score to save calculating dynamically
+        // Is update on changes to zoom/scale
+        px: {
+            scale: 0,  // float representing scale from defaultHeight in JSON
+                    // defaults to whatever makes score height = 550px
+            width: 0, // calculated pixel width per scale
+            height: 0, // calculated pixel height per scale
+            measures: [], // array of ints: the pixel of left measure boundary
+            staves: [], // array of { name: STR, top: INT, bottom: INT }
+        }
+
+    }
+}
+
+function Score(props) {
+
+    const [state, dispatch] = useReducer(reducer, initialState);
+
+    const s = {
+        margin: '0px',
+        padding: '0px', 
+        width: '1920px',
+        height: '550px',
+    }
+
+    function handleKeydown(e) {
+        console.log('keydown:', e)
+        if (e.code == 'KeyL') {
+            if (e.shiftKey) {
+                dispatch({
+                    type: 'extendSelection',
+                    units: 1,
+                })
+            } else {
+                dispatch({
+                    type: 'moveSelection', 
+                    units: 1,
+                })
+            }
+        }
+        if (e.code == 'KeyH') {
+            if (e.shiftKey) {
+                dispatch({
+                    type: 'extendSelection',
+                    units: -1,
+                })
+            } else {
+                dispatch({
+                    type: 'moveSelection', 
+                    units: -1,
+                })
+            }
+        }
+        if (e.code == 'Period') {
+            dispatch({
+                type: 'setOffset',
+            })
+        }
+        if (e.code == 'Space') {
+            dispatch({
+                type: 'toggleUnderlight',
+            })
+        }
+        if (e.code == 'Equal') {
+            dispatch({
+                type: 'changeScale',
+                units: 1,
+            })
+        }
+        if (e.code == 'Minus') {
+            dispatch({
+                type: 'changeScale',
+                units: -1,
+            })
+        }
+        if (e.code == 'Digit0') {
+            dispatch({
+                type: 'moveToStart',
+            })
+        }
+        if (e.code == 'Digit4' && e.shiftKey) {
+            dispatch({
+                type: 'moveToEnd',
+            })
+        }
+    }
+
+    function loadScoreData(filename) {
+        const cb = Math.random()*1000
+        const url = `music/${filename}/${filename}.json?cb=${cb}`
+        fetch(url).then(
+            res => res.json()).then(
+                result => {
+                    setTimeout(() => {
+                        dispatch({
+                            type: 'prepLoadedMusic', 
+                            filename: filename,
+                            scoreData: result,
+                        })
+                    }, 1000
+                    )
+                }).catch(console.log);
+    }
+
+    useEffect(() => {
+        const filename = 'doubledozen'
+        loadScoreData(filename)
+        document.addEventListener('keydown', handleKeydown);
+        return () => {
+            document.removeEventListener('keydown', handleKeydown);
+        }
+    }, [])
+
+    return (
+        <div style={s}>
+            <Music
+                state={state}
+            />
+        </div>
+    );
+}
+
+export default Score

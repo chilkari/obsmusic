@@ -1,0 +1,28 @@
+{
+  "baseWidth": 59.400204,
+  "baseHeight": 17.041718,
+  "defaultHeight": 500,
+  "inkBounds": {
+    "top": 9999,
+    "bottom": -9999,
+    "left": 9999,
+    "right": -9999
+  },
+  "measures": [
+    0.42551863,
+    0.697245,
+    0.9876396
+  ],
+  "staves": [
+    {
+      "name": "staff-1",
+      "top": 0.1413844,
+      "bottom": 0.3761025
+    },
+    {
+      "name": "staff-2",
+      "top": 0.66950023,
+      "bottom": 0.9042183
+    }
+  ]
+}
