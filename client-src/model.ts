@@ -13,7 +13,8 @@ interface ScoreMetrics {
 }
 
 interface ScoreAction {
-    filename: string; scoreData: ScoreMetrics;
+    filename: string;
+    scoreData: ScoreMetrics;
     type: string;
 }
 
@@ -23,7 +24,19 @@ interface ScoreState {
     pixels: ScoreMetrics | undefined; // Calculated pixel values given a certain zoom
 }
 
+interface StyleBounds {
+    top: string;
+    left: string;
+    width: string;
+    height: string;
+    opacity: number;
+}
+
 interface MusicProps {
+    state: ScoreState,
+}
+
+interface UnderlightProps {
     state: ScoreState,
 }
 
@@ -32,5 +45,7 @@ export {
     ScoreMetrics,
     ScoreAction,
     ScoreState,
+    StyleBounds,
     MusicProps,
+    UnderlightProps,
 }

@@ -55,16 +55,30 @@ function Music(props: model.MusicProps) {
     }
 }
 
+function Underlight(props: model.UnderlightProps) {
+    if (props.state.scoreData === null) {
+        return null
+    } else {
+        const s = scorelogic.getUnderlightStyle(props.state)
+        return (
+            <div id="underlight" style={s} />
+        )
+    }
+
+}
+
 function Score() {
 
     const [state, dispatch] = useReducer(reducer, initialState);
 
+    /*
     const s = {
         margin: '0px',
         padding: '0px',
         width: '1920px',
         height: '550px',
     }
+    */
 
 
 
@@ -158,13 +172,20 @@ function Score() {
         }
     }, [])
 
+    console.log(`Setting music width to ${state.pixels?.baseWidth}`)
+    console.log(`Setting music height to ${state.pixels?.baseHeight}`)
+    const s = {
+        top: 0 + 'px',
+        left: 0 + 'px',
+        width: state.pixels?.baseWidth + 'px',
+        height: state.pixels?.baseHeight + 'px',
+    }
     return (
-		<div id="score">
+		<div id="score" style={s}>
             <Music state={state} />
+            <Underlight state={state} />
         </div>
     );
 }
 
-
 export default Score
-

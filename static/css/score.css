@@ -5,6 +5,24 @@ body, div {
     overflow-y: hidden;
 }
 
+#score {
+    border: 1px solid #f00;
+    transition-property: top, left, height, width;
+    transition-timing-function: ease;
+    transition-duration: 200ms;
+}
+
+#music {
+    position: absolute;
+    z-index: 1,
+}
+
+#underlight {
+    position: absolute;
+    z-index: -1;
+    background-color: #ddeecc;
+}
+
 /* FIXME - update for new divs
 #musicwrap {
     transition-property: top, left, height, width;
