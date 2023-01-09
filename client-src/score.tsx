@@ -5,15 +5,21 @@ import * as scorelogic from './scorelogic';
 
 function reducer(state: model.ScoreState, action: model.ScoreAction):model.ScoreState {
 	const newState = JSON.parse(JSON.stringify(state))
-	console.log('reducer entry. action:', action)
+	// console.log('reducer entry. action:', action)
 	switch (action.type) {
 		case 'prepLoadedMusic':
 			return scorelogic.prepLoadedMusic(newState, action)
+		case 'moveSelectionX':
+			return scorelogic.moveSelectionX(newState, action)
+		case 'extendSelectionX':
+			return scorelogic.extendSelectionX(newState, action)
+		case 'allStaves':
+			return scorelogic.allStaves(newState, action)
+        case 'moveSelectionY':
+            return scorelogic.moveSelectionY(newState, action)
+        // extendSelectionY makes sense for scores with > 2 staves.
+        // Not needed for piano scores at the moment.
 		/*
-		case 'moveSelection':
-			return scorelogic.moveSelection(newState, action)
-		case 'extendSelection':
-			return scorelogic.extendSelection(newState, action)
 		case 'moveToStart':
 			return scorelogic.moveToStart(newState)
 		case 'moveToEnd':
@@ -23,10 +29,9 @@ function reducer(state: model.ScoreState, action: model.ScoreAction):model.Score
 		case 'toggleUnderlight':
 			newState.runtime.underlightVisible = !newState.runtime.underlightVisible
 			return newState
-		case 'changeScale':
-			// FIXME - debounce
-			return scorelogic.changeScale(newState, action)
 			*/
+		case 'changeScale':
+			return scorelogic.changeScale(newState, action)
 		default:
 			throw new Error();
   }
@@ -36,6 +41,18 @@ const initialState: model.ScoreState = {
     image: undefined,
     scoreData: undefined,
     pixels: undefined,
+    selection: {
+        modeX: "measure",
+        modeY: "all",
+        xIndex: 0, // 0-based index to selected item
+        yIndex: 0, //
+        xUnits: 1, // number of selected units x-wise
+        yUnits: 0, // TODO - consider. Set to 0 as this is _added_ for staff index from current...
+    },
+    pages: {
+        activePageIndex: 0,
+        pages: [0],
+    }
 }
 
 
@@ -71,46 +88,85 @@ function Score() {
 
     const [state, dispatch] = useReducer(reducer, initialState);
 
-    /*
-    const s = {
-        margin: '0px',
-        padding: '0px',
-        width: '1920px',
-        height: '550px',
-    }
-    */
-
-
-
-    function handleKeydown(e:Event) {
+    function handleKeydown(e:KeyboardEvent) {
         console.log('keydown:', e)
-		/*
         if (e.code == 'KeyL') {
             if (e.shiftKey) {
                 dispatch({
-                    type: 'extendSelection',
-                    units: 1,
+                    type: 'extendSelectionX',
+                    data: {
+                        units: 1,
+                    },
                 })
             } else {
                 dispatch({
-                    type: 'moveSelection',
-                    units: 1,
+                    type: 'moveSelectionX',
+                    data: {
+                        units: 1,
+                    },
                 })
             }
         }
         if (e.code == 'KeyH') {
             if (e.shiftKey) {
                 dispatch({
-                    type: 'extendSelection',
-                    units: -1,
+                    type: 'extendSelectionX',
+                    data: {
+                        units: -1,
+                    },
                 })
             } else {
                 dispatch({
-                    type: 'moveSelection',
-                    units: -1,
+                    type: 'moveSelectionX',
+                    data: {
+                        units: -1,
+                    },
                 })
             }
         }
+        // A == "all staves mode vs a single staff"
+        if (e.code == 'KeyA') {
+            dispatch({
+                type: 'allStaves',
+                data: {
+                    units: 1,
+                },
+            })
+        }
+        if (e.code == 'KeyJ') {
+            dispatch({
+                type: 'moveSelectionY',
+                data: {
+                    units: 1,
+                },
+            })
+        }
+        if (e.code == 'KeyK') {
+            dispatch({
+                type: 'moveSelectionY',
+                data: {
+                    units: -1,
+                },
+            })
+        }
+        if (e.code == 'Equal') {
+            dispatch({
+                type: 'changeScale',
+                data: {
+                    units: 1,
+                },
+            })
+        }
+        if (e.code == 'Minus') {
+            dispatch({
+                type: 'changeScale',
+                data: {
+                    units: -1,
+                },
+            })
+        }
+
+		/*
         if (e.code == 'Period') {
             dispatch({
                 type: 'setOffset',
@@ -119,18 +175,6 @@ function Score() {
         if (e.code == 'Space') {
             dispatch({
                 type: 'toggleUnderlight',
-            })
-        }
-        if (e.code == 'Equal') {
-            dispatch({
-                type: 'changeScale',
-                units: 1,
-            })
-        }
-        if (e.code == 'Minus') {
-            dispatch({
-                type: 'changeScale',
-                units: -1,
             })
         }
         if (e.code == 'Digit0') {
@@ -144,9 +188,11 @@ function Score() {
             })
         }
 		*/
+
     }
 
     function loadScoreData(filename: string) {
+        // TODO - consider removing this cachebuster once stable score data.
         const cb = Math.random()*1000
         const url = `music/${filename}/${filename}.json?cb=${cb}`
         fetch(url).then(
@@ -155,8 +201,10 @@ function Score() {
                     setTimeout(() => {
                         dispatch({
                             type: 'prepLoadedMusic',
-                            filename: filename,
-                            scoreData: result,
+                            data: {
+                                filename: filename,
+                                scoreData: result,
+                            }
                         })
                     }, 1000
                     )
@@ -172,14 +220,7 @@ function Score() {
         }
     }, [])
 
-    console.log(`Setting music width to ${state.pixels?.baseWidth}`)
-    console.log(`Setting music height to ${state.pixels?.baseHeight}`)
-    const s = {
-        top: 0 + 'px',
-        left: 0 + 'px',
-        width: state.pixels?.baseWidth + 'px',
-        height: state.pixels?.baseHeight + 'px',
-    }
+    const s = scorelogic.getScoreStyle(state)
     return (
 		<div id="score" style={s}>
             <Music state={state} />

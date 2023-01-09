@@ -6,7 +6,7 @@ body, div {
 }
 
 #score {
-    border: 1px solid #f00;
+    position: absolute;
     transition-property: top, left, height, width;
     transition-timing-function: ease;
     transition-duration: 200ms;
@@ -21,6 +21,9 @@ body, div {
     position: absolute;
     z-index: -1;
     background-color: #ddeecc;
+    transition-property: top, left, height, width;
+    transition-timing-function: ease;
+    transition-duration: 150ms;
 }
 
 /* FIXME - update for new divs
