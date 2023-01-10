@@ -209,6 +209,18 @@ function moveSelectionY(newState: model.ScoreState, action: model.ScoreAction): 
     return newState
 }
 
+function moveToStart(newState: model.ScoreState, action: model.ScoreAction): model.ScoreState {
+    newState.selection.xIndex = 0
+    return newState
+}
+function moveToEnd(newState: model.ScoreState, action: model.ScoreAction): model.ScoreState {
+    if (!newState.pixels) {
+        return newState
+    }
+    newState.selection.xIndex = newState.pixels.measures.length-2
+    return newState
+}
+
 
 export {
     prepLoadedMusic,
@@ -217,6 +229,8 @@ export {
     extendSelectionX,
     allStaves,
     moveSelectionY,
+    moveToStart,
+    moveToEnd,
     changeScale,
     getScoreStyle,
 }

@@ -17,6 +17,10 @@ function reducer(state: model.ScoreState, action: model.ScoreAction):model.Score
 			return scorelogic.allStaves(newState, action)
         case 'moveSelectionY':
             return scorelogic.moveSelectionY(newState, action)
+        case 'moveToStart':
+            return scorelogic.moveToStart(newState, action)
+        case 'moveToEnd':
+            return scorelogic.moveToEnd(newState, action)
         // extendSelectionY makes sense for scores with > 2 staves.
         // Not needed for piano scores at the moment.
 		/*
@@ -165,6 +169,18 @@ function Score() {
                 },
             })
         }
+        if (e.code == 'Digit0') {
+            dispatch({
+                type: 'moveToStart',
+                data: {},
+            })
+        }
+        if (e.code == 'Digit4' && e.shiftKey) {
+            dispatch({
+                type: 'moveToEnd',
+                data: {},
+            })
+        }
 
 		/*
         if (e.code == 'Period') {
@@ -175,16 +191,6 @@ function Score() {
         if (e.code == 'Space') {
             dispatch({
                 type: 'toggleUnderlight',
-            })
-        }
-        if (e.code == 'Digit0') {
-            dispatch({
-                type: 'moveToStart',
-            })
-        }
-        if (e.code == 'Digit4' && e.shiftKey) {
-            dispatch({
-                type: 'moveToEnd',
             })
         }
 		*/
