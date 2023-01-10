@@ -211,6 +211,10 @@ function Score() {
     }
 
     useEffect(() => {
+        // const filename = 'simple'
+        // const filename = 'simplepiano'
+        // const filename = 'measuretypes'
+        // const filename = 'nukestep_keys'
         const filename = 'doubledozen'
         loadScoreData(filename)
         document.addEventListener('keydown', handleKeydown);
