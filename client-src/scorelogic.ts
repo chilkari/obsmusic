@@ -65,7 +65,11 @@ function calcPages(state: model.ScoreState): model.ScorePages {
     let subtractPixelsForCurrentPage = 0;
     state.pixels.measures.forEach((v,i) => {
         const currentPagePixelValue = (PADDING_LEFT + v) - subtractPixelsForCurrentPage
-        if (state.pixels && currentPagePixelValue > state.pixels.viewportWidth) {
+        if (state.pixels && (
+            currentPagePixelValue > state.pixels.viewportWidth ||
+            (state.selection.anchoredMeasureIndex !== null &&
+             state.selection.anchoredMeasureIndex == i-1)
+            )) {
             // We've reached a page boundary on the previous measure.
             newPages.pages.push(i-1)
             const previousMeasurePixel = state.pixels.measures[i-1]
@@ -74,6 +78,28 @@ function calcPages(state: model.ScoreState): model.ScorePages {
     })
     console.log('Returning new pages:', newPages)
     return newPages
+}
+
+// Whatever the state.xIndex is, repaginate so that this particular measure
+// is the start of a page. This is useful when showing a particular group
+// of say 4 or 8 measures, and we're trying to show them all at once, but with
+// normal pagination, they might begin in the middle of a page and won't fit.
+//
+// It's a bit awkward, and I'm building it so that there can only be a single
+// "explicit" measure like this at any one time. It's a nullable property in
+// the selection object. When moving through the calcPages function, if that
+// selection.anchoredMeasureIndex is set, that will always mark the start
+// of a new page (at the appropriate place), and normal pagination will
+// follow from there.
+function toggleCurrentMeasureAnchor(state: model.ScoreState): model.ScoreState {
+    const newState = JSON.parse(JSON.stringify(state))
+    if (newState.selection.anchoredMeasureIndex === null) {
+        newState.selection.anchoredMeasureIndex = newState.selection.xIndex
+    } else {
+        newState.selection.anchoredMeasureIndex = null
+    }
+    newState.pages = calcPages(newState)
+    return newState
 }
 
 function changeScale(newState: model.ScoreState, action: model.ScoreAction): model.ScoreState {
@@ -226,7 +252,6 @@ function toggleUnderlight(newState: model.ScoreState, action: model.ScoreAction)
     return newState
 }
 
-
 export {
     prepLoadedMusic,
     getUnderlightStyle,
@@ -239,4 +264,5 @@ export {
     changeScale,
     getScoreStyle,
     toggleUnderlight,
+    toggleCurrentMeasureAnchor,
 }

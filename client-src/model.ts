@@ -32,6 +32,7 @@ interface ScoreSelection {
     yIndex: number, //
     xUnits: number, // number of selected units x-wise
     yUnits: number, // number of selected units y-wise
+    anchoredMeasureIndex: number | null,
 }
 
 interface ScorePages {

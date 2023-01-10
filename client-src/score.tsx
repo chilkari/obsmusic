@@ -21,21 +21,12 @@ function reducer(state: model.ScoreState, action: model.ScoreAction):model.Score
             return scorelogic.moveToStart(newState, action)
         case 'moveToEnd':
             return scorelogic.moveToEnd(newState, action)
+		case 'toggleCurrentMeasureAnchor':
+			return scorelogic.toggleCurrentMeasureAnchor(newState)
         case 'toggleUnderlight':
             return scorelogic.toggleUnderlight(newState, action)
         // extendSelectionY makes sense for scores with > 2 staves.
         // Not needed for piano scores at the moment.
-		/*
-		case 'moveToStart':
-			return scorelogic.moveToStart(newState)
-		case 'moveToEnd':
-			return scorelogic.moveToEnd(newState)
-		case 'setOffset':
-			return scorelogic.setOffset(newState)
-		case 'toggleUnderlight':
-			newState.runtime.underlightVisible = !newState.runtime.underlightVisible
-			return newState
-			*/
 		case 'changeScale':
 			return scorelogic.changeScale(newState, action)
 		default:
@@ -55,6 +46,7 @@ const initialState: model.ScoreState = {
         yIndex: 0, //
         xUnits: 1, // number of selected units x-wise
         yUnits: 0, // TODO - consider. Set to 0 as this is _added_ for staff index from current...
+        anchoredMeasureIndex: null
     },
     pages: {
         activePageIndex: 0,
@@ -190,15 +182,12 @@ function Score() {
                 data: {},
             })
         }
-
-		/*
         if (e.code == 'Period') {
             dispatch({
-                type: 'setOffset',
+                type: 'toggleCurrentMeasureAnchor',
+                data: {},
             })
         }
-		*/
-
     }
 
     function loadScoreData(filename: string) {
