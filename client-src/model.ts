@@ -45,6 +45,7 @@ interface ScorePages {
 
 interface ScoreState {
     image: string | undefined;
+    underlightVisible: boolean;
     scoreData: ScoreMetrics | undefined; // Original float (0-1) values from json
     pixels: ScoreMetrics | undefined; // Calculated pixel values given a certain zoom
     selection: ScoreSelection;

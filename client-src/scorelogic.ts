@@ -129,7 +129,7 @@ function getUnderlightStyle(state: model.ScoreState): model.StyleBounds {
         left: '0px',
         width: '1px',
         height: '1px',
-        opacity: 1.0,
+        opacity: (state.underlightVisible) ? 1.0 : 0.0,
     }
     if (state.pixels) {
         if (state.pixels.staves.length == 0) {
@@ -221,6 +221,11 @@ function moveToEnd(newState: model.ScoreState, action: model.ScoreAction): model
     return newState
 }
 
+function toggleUnderlight(newState: model.ScoreState, action: model.ScoreAction): model.ScoreState {
+    newState.underlightVisible = !newState.underlightVisible
+    return newState
+}
+
 
 export {
     prepLoadedMusic,
@@ -233,4 +238,5 @@ export {
     moveToEnd,
     changeScale,
     getScoreStyle,
+    toggleUnderlight,
 }

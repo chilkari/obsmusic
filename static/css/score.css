@@ -21,9 +21,9 @@ body, div {
     position: absolute;
     z-index: -1;
     background-color: #ddeecc;
-    transition-property: top, left, height, width;
+    transition-property: top, left, height, width, opacity;
+    transition-duration: 150ms, 150ms, 150ms, 150ms, 500ms;
     transition-timing-function: ease;
-    transition-duration: 150ms;
 }
 
 /* FIXME - update for new divs

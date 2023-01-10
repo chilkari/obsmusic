@@ -21,6 +21,8 @@ function reducer(state: model.ScoreState, action: model.ScoreAction):model.Score
             return scorelogic.moveToStart(newState, action)
         case 'moveToEnd':
             return scorelogic.moveToEnd(newState, action)
+        case 'toggleUnderlight':
+            return scorelogic.toggleUnderlight(newState, action)
         // extendSelectionY makes sense for scores with > 2 staves.
         // Not needed for piano scores at the moment.
 		/*
@@ -43,6 +45,7 @@ function reducer(state: model.ScoreState, action: model.ScoreAction):model.Score
 
 const initialState: model.ScoreState = {
     image: undefined,
+    underlightVisible: true,
     scoreData: undefined,
     pixels: undefined,
     selection: {
@@ -181,16 +184,17 @@ function Score() {
                 data: {},
             })
         }
+        if (e.code == 'Space') {
+            dispatch({
+                type: 'toggleUnderlight',
+                data: {},
+            })
+        }
 
 		/*
         if (e.code == 'Period') {
             dispatch({
                 type: 'setOffset',
-            })
-        }
-        if (e.code == 'Space') {
-            dispatch({
-                type: 'toggleUnderlight',
             })
         }
 		*/
